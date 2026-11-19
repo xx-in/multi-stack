@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+x-island,
+x-header,
+x-nav {
+  display: block;
+}
+
+html:has(x-header),
+body:has(x-header),
+#app:has(x-header),
+#app:has(x-header) > div,
+#outlet:has(x-header) {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app:has(x-header) > div {
+  min-height: 0;
+}
+
+x-header {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+x-slot {
+  display: contents;
+}
+
+@utility spacer {
+  height: 120vh;
+}
+
+a[data-nav][aria-current='page'] {
+  background-color: var(--color-zinc-900);
+  color: #fff;
+}
+
+.dark a[data-nav][aria-current='page'] {
+  background-color: var(--color-zinc-100);
+  color: var(--color-zinc-900);
+}
+
+button[data-theme][aria-pressed='true'] {
+  background-color: var(--color-zinc-900);
+  border-color: var(--color-zinc-900);
+  color: #fff;
+}
+
+.dark button[data-theme][aria-pressed='true'] {
+  background-color: var(--color-zinc-100);
+  border-color: var(--color-zinc-100);
+  color: var(--color-zinc-900);
+}

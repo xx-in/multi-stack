@@ -1,0 +1,46 @@
+---
+description: Island 多框架岛屿 SPA 的架构约束。改页面、路由、组件和顶栏时遵守，不要另起一套结构。
+alwaysApply: true
+---
+
+# 架构要求
+
+无 SSR 的岛屿 SPA。日常只改路由、页面和组件。`src/core` 里的路由器、渲染器、权限和路径解析不要顺手重写。
+
+## 路由
+
+- 只有 `index.tsx`、`index.vue`、`index.svelte` 是路由。`/` 对应 `src/pages/index/index.*`，其他路径对应 `src/pages${path}/index.*`。
+- 同目录里的其他文件是该页自己的组件，不是路由。多个页面共用的组件放在 `src/components`。
+- 没有写进 `src/routes.ts` 的路由默认可访问，不必登记。这个文件只登记需要权限的页面。
+
+## 权限
+
+- 不用 `user`、`admin` 这类角色名。每个受控菜单占一个二进制位，权限是一个数字，用 `(mask & bit) === bit` 判断。
+- 数字存在 `sessionStorage` 的 `island-permissions`。非法值或旧的非数字数据当作 `0`。
+- 没有对应位时不挂载该页，页内岛屿也不挂载，顶栏里带 `data-bit` 的链接隐藏。直接打开地址时显示无权访问。
+- 位只写在 `src/routes.ts`。顶栏按路径查位，不要在导航里再维护一套。
+
+## 顶栏
+
+- `src/components/AppHeader.ts` 是固定壳子 `<x-header>`。需要顶栏的页面导入它，正文作为插槽写进 `<x-header>`。
+- 壳子固定在页面上方，只有插槽区域可以垂直滚动。不导入壳子的页面没有顶栏，按整页滚动。
+- `src/components/AppNav.ts` 是导航子组件，放菜单、权限和昼夜。替换导航时只换这个子组件，不要把导航写回壳子。导航链接与现有路由一致。
+
+## 标题
+
+- `index.html` 的默认标题是「加载中」。
+- 页面导出的 `title` 就是标签页的完整标题，不要再追加站点名。没有导出时保持「加载中」。
+- React 写 `export const title`。Vue 用与 `<script setup>` 分开的普通 `<script>`。Svelte 用 `<script module>`。运行中改标题用 `@/core/title.ts` 的 `applyTitle`。
+
+## 框架与岛屿
+
+- React、Vue 3、Vue 2、Svelte 对等。一个功能要对照四种实现时，四种都做。同一个动作只留一个控件，用 `@island/bus` 通知其余框架。`bus.on` 返回的取消函数在卸载时调用。
+- 岛屿写法：`<x-island component={组件} renderer="react|vue|vue2|svelte">`。`component` 是 import 进来的对象，不是文件路径。Vue 模板写 `:component`。`vue` 表示 Vue 3。
+- Vue 2 和 Vue 3 都用 `.vue`。只有文件开头的 `<!-- vue2 -->` 表示 Vue 2，写在模板中间不算。其余 `.vue` 按 Vue 3 编译。
+- Vue 2 页面只有一个根节点。Vue 2 渲染不要改成 `$mount(宿主元素)`，那会换掉 `<x-island>` 或 `#outlet`。
+- `when="visible"` 的 `<x-island>` 保持 `display: block`。`display: contents` 只用于 `<x-slot>`。
+
+## 导入与样式
+
+- 同一目录用相对路径，例如 `import TodoList from './TodoList.tsx'`。跨目录才用 `@`，`@` 指向 `src`。总线固定用 `@island/bus`。
+- 样式用 Tailwind CSS 4。昼夜切换写在 `html` 的 `dark` 类上，记在 `localStorage` 的 `island-theme`。
